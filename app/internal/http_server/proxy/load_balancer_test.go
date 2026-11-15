@@ -266,7 +266,11 @@ func TestStreamingResponseOutlivesServerWriteTimeout(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer response.Body.Close()
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			t.Errorf("close streamed response body: %v", err)
+		}
+	}()
 	lines, err := io.ReadAll(response.Body)
 	if err != nil {
 		t.Fatal(err)
