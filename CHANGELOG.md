@@ -1,6 +1,7 @@
-## [Unreleased]
+## [1.15.0] - 2026-11-15
 
 ### Added
+- add opt-in mutex and block profiling controls for runtime contention diagnostics
 - add an Astro landing page with self-hosted fonts, brand assets, and SEO metadata
 - publish Starlight guides for installation, configuration, usage, runtime reference, and FAQ
 - build and deploy the website to GitHub Pages with a website path filter

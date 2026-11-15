@@ -13,6 +13,8 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -43,6 +45,9 @@ func Run() {
 	}
 	if err := file.Validate(cfg); err != nil {
 		log.Fatalf("invalid configuration: %v", err)
+	}
+	if err := configureRuntimeProfiling(); err != nil {
+		log.Fatalf("invalid profiling configuration: %v", err)
 	}
 	shared.ProxyTransport = shared.NewProxyTransport(
 		time.Duration(cfg.Server.Timeout.Connect)*time.Second,
@@ -192,6 +197,24 @@ func Run() {
 		}
 	}
 	streams.Wait()
+}
+
+func configureRuntimeProfiling() error {
+	if value := os.Getenv("LEOXY_MUTEX_PROFILE_FRACTION"); value != "" {
+		fraction, err := strconv.Atoi(value)
+		if err != nil || fraction < 0 {
+			return fmt.Errorf("LEOXY_MUTEX_PROFILE_FRACTION must be a non-negative integer")
+		}
+		runtime.SetMutexProfileFraction(fraction)
+	}
+	if value := os.Getenv("LEOXY_BLOCK_PROFILE_RATE"); value != "" {
+		rate, err := strconv.Atoi(value)
+		if err != nil || rate < 0 {
+			return fmt.Errorf("LEOXY_BLOCK_PROFILE_RATE must be a non-negative integer")
+		}
+		runtime.SetBlockProfileRate(rate)
+	}
+	return nil
 }
 
 func newHTTPRoot(mux, protected http.Handler, security file.Security) http.Handler {
