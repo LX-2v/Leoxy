@@ -9,6 +9,8 @@
 - bypass the global rate limiter for liveness and ping endpoints
 - eject backends after dial failures and retry replayable non-idempotent requests
 - allow graceful shutdown to finish before forcing stopped processes
+- apply the request timeout to upstream response headers and preserve SSE and Upgrade streams beyond server deadlines
+- prevent automatic upstream request compression
 
 ## [1.13.2] - 2026-11-05
 

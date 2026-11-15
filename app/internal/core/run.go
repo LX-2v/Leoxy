@@ -44,7 +44,10 @@ func Run() {
 	if err := file.Validate(cfg); err != nil {
 		log.Fatalf("invalid configuration: %v", err)
 	}
-	shared.ProxyTransport = shared.NewProxyTransport(time.Duration(cfg.Server.Timeout.Connect) * time.Second)
+	shared.ProxyTransport = shared.NewProxyTransport(
+		time.Duration(cfg.Server.Timeout.Connect)*time.Second,
+		time.Duration(cfg.Server.Timeout.Request)*time.Second,
+	)
 	sec := cfg.Server.Security
 
 	trustedProxyCIDRs, err := common.ParseCIDRs(sec.TrustedProxyCIDRs)
@@ -322,7 +325,7 @@ func registerHTTP(mux *http.ServeMux, global file.Security, resource file.Upstre
 	if security.MaxBody <= 0 {
 		security.MaxBody = global.MaxBody
 	}
-	var handler http.Handler = proxy.LoadBalancedProxyHandler(prefix, targets, resource.IP, trusted)
+	var handler http.Handler = proxy.ExtendStreaming(proxy.LoadBalancedProxyHandler(prefix, targets, resource.IP, trusted))
 	handler = securitymiddleware.Body(security.MaxBody, handler)
 	secured, err := securitymiddleware.AccessControlWithJWT(
 		security.AllowCIDRs,
