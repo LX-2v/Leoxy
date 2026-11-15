@@ -95,8 +95,26 @@ func TestHTTPGlobalRateLimitAppliesOnceAcrossRoutes(t *testing.T) {
 	if got := requestStatus(root, "/api", "192.0.2.2:1000"); got != http.StatusOK {
 		t.Fatalf("API status = %d, want %d", got, http.StatusOK)
 	}
-	if got := requestStatus(root, "/ping", "192.0.2.3:1000"); got != http.StatusTooManyRequests {
+	if got := requestStatus(root, "/api", "192.0.2.3:1000"); got != http.StatusTooManyRequests {
 		t.Fatalf("third global request status = %d, want %d", got, http.StatusTooManyRequests)
+	}
+}
+
+func TestHTTPHealthLiveBypassesGlobalRateLimit(t *testing.T) {
+	frontend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK) }))
+	defer frontend.Close()
+
+	serverSecurity := file.Security{GlobalRateLimit: 60, GlobalRateBurst: 1}
+	mux := http.NewServeMux()
+	registerHTTP(mux, serverSecurity, file.Upstream{Name: "Frontend", Path: "/", ServerURL: frontend.URL}, nil)
+	mux.HandleFunc("/health/live", func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK) })
+	root := newHTTPRoot(mux, mux, serverSecurity)
+
+	if got := requestStatus(root, "/", "192.0.2.1:1000"); got != http.StatusOK {
+		t.Fatalf("request exhausting global bucket status = %d, want %d", got, http.StatusOK)
+	}
+	if got := requestStatus(root, "/health/live", "192.0.2.2:1000"); got != http.StatusOK {
+		t.Fatalf("health live status = %d, want %d", got, http.StatusOK)
 	}
 }
 

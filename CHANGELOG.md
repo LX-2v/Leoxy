@@ -5,6 +5,11 @@
 - publish Starlight guides for installation, configuration, usage, runtime reference, and FAQ
 - build and deploy the website to GitHub Pages with a website path filter
 
+### Fixed
+- bypass the global rate limiter for liveness and ping endpoints
+- eject backends after dial failures and retry replayable non-idempotent requests
+- allow graceful shutdown to finish before forcing stopped processes
+
 ## [1.13.2] - 2026-11-05
 
 ## Added

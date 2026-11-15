@@ -1,8 +1,9 @@
 import socketserver
 import threading
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-HTTP_PORTS = [9001, 9002]
+HTTP_PORTS = [9000, 3000]
 TCP_PORT = 9101
 UDP_PORT = 9102
 HOST = "127.0.0.1"
@@ -24,6 +25,8 @@ def make_handler(name):
 
         def respond(self):
             self.drain_body()
+            if self.path == "/slow":
+                time.sleep(5)
             payload = ("ok:" + name).encode()
             self.send_response(200)
             self.send_header("X-Served-By", name)

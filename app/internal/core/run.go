@@ -192,14 +192,7 @@ func Run() {
 }
 
 func newHTTPRoot(mux, protected http.Handler, security file.Security) http.Handler {
-	root := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/ping" || r.URL.Path == "/health/live" {
-			mux.ServeHTTP(w, r)
-			return
-		}
-		protected.ServeHTTP(w, r)
-	})
-	return securitymiddleware.RedisTokenBucketRateLimit(
+	limited := securitymiddleware.RedisTokenBucketRateLimit(
 		security.RedisConnect,
 		security.RedisAddr,
 		security.RedisPassword,
@@ -208,8 +201,15 @@ func newHTTPRoot(mux, protected http.Handler, security file.Security) http.Handl
 		security.GlobalRateBurst,
 		"leoxy:global",
 		security.RedisFailOpen,
-		root,
+		protected,
 	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/ping" || r.URL.Path == "/health/live" {
+			mux.ServeHTTP(w, r)
+			return
+		}
+		limited.ServeHTTP(w, r)
+	})
 }
 
 func listenAddress(host, port string) string {

@@ -6,7 +6,6 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
-	"time"
 
 	platform "github.com/elrefai99/Leoxy/app/internal/core"
 
@@ -43,14 +42,7 @@ var restartCmd = &cobra.Command{
 				return fmt.Errorf("could not stop server with PID %d: %w", pid, forceErr)
 			}
 		}
-		for i := 0; i < 20; i++ {
-			if !platform.ProcessRunning(pid) {
-				break
-			}
-			time.Sleep(100 * time.Millisecond)
-		}
-
-		if platform.ProcessRunning(pid) {
+		if !platform.WaitStopped(pid, stopTimeout) {
 			if !platform.ProcessMatches(pid, "leoxy") {
 				_ = os.Remove(pidFile)
 				return fmt.Errorf("process with PID %d no longer matches Leoxy", pid)
