@@ -90,6 +90,7 @@ jobs:
             const breaking = match?.[2] === '!'
 
             const section = sections[type]
+            if (!section) continue
 
             section.commits.push(
               `- ${breaking ? '**BREAKING:** ' : ''}${message} ([${hash.slice(0, 7)}](https://github.com/${repository}/commit/${hash}))`
