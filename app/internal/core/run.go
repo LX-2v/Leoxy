@@ -13,6 +13,8 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -44,7 +46,13 @@ func Run() {
 	if err := file.Validate(cfg); err != nil {
 		log.Fatalf("invalid configuration: %v", err)
 	}
-	shared.ProxyTransport = shared.NewProxyTransport(time.Duration(cfg.Server.Timeout.Connect) * time.Second)
+	if err := configureRuntimeProfiling(); err != nil {
+		log.Fatalf("invalid profiling configuration: %v", err)
+	}
+	shared.ProxyTransport = shared.NewProxyTransport(
+		time.Duration(cfg.Server.Timeout.Connect)*time.Second,
+		time.Duration(cfg.Server.Timeout.Request)*time.Second,
+	)
 	sec := cfg.Server.Security
 
 	trustedProxyCIDRs, err := common.ParseCIDRs(sec.TrustedProxyCIDRs)
@@ -191,15 +199,26 @@ func Run() {
 	streams.Wait()
 }
 
-func newHTTPRoot(mux, protected http.Handler, security file.Security) http.Handler {
-	root := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/ping" || r.URL.Path == "/health/live" {
-			mux.ServeHTTP(w, r)
-			return
+func configureRuntimeProfiling() error {
+	if value := os.Getenv("LEOXY_MUTEX_PROFILE_FRACTION"); value != "" {
+		fraction, err := strconv.Atoi(value)
+		if err != nil || fraction < 0 {
+			return fmt.Errorf("LEOXY_MUTEX_PROFILE_FRACTION must be a non-negative integer")
 		}
-		protected.ServeHTTP(w, r)
-	})
-	return securitymiddleware.RedisTokenBucketRateLimit(
+		runtime.SetMutexProfileFraction(fraction)
+	}
+	if value := os.Getenv("LEOXY_BLOCK_PROFILE_RATE"); value != "" {
+		rate, err := strconv.Atoi(value)
+		if err != nil || rate < 0 {
+			return fmt.Errorf("LEOXY_BLOCK_PROFILE_RATE must be a non-negative integer")
+		}
+		runtime.SetBlockProfileRate(rate)
+	}
+	return nil
+}
+
+func newHTTPRoot(mux, protected http.Handler, security file.Security) http.Handler {
+	limited := securitymiddleware.RedisTokenBucketRateLimit(
 		security.RedisConnect,
 		security.RedisAddr,
 		security.RedisPassword,
@@ -208,8 +227,15 @@ func newHTTPRoot(mux, protected http.Handler, security file.Security) http.Handl
 		security.GlobalRateBurst,
 		"leoxy:global",
 		security.RedisFailOpen,
-		root,
+		protected,
 	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/ping" || r.URL.Path == "/health/live" {
+			mux.ServeHTTP(w, r)
+			return
+		}
+		limited.ServeHTTP(w, r)
+	})
 }
 
 func listenAddress(host, port string) string {
@@ -322,7 +348,7 @@ func registerHTTP(mux *http.ServeMux, global file.Security, resource file.Upstre
 	if security.MaxBody <= 0 {
 		security.MaxBody = global.MaxBody
 	}
-	var handler http.Handler = proxy.LoadBalancedProxyHandler(prefix, targets, resource.IP, trusted)
+	var handler = proxy.ExtendStreaming(proxy.LoadBalancedProxyHandler(prefix, targets, resource.IP, trusted))
 	handler = securitymiddleware.Body(security.MaxBody, handler)
 	secured, err := securitymiddleware.AccessControlWithJWT(
 		security.AllowCIDRs,

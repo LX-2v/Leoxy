@@ -81,19 +81,18 @@ func TestGetFailsOverToHealthyBackend(t *testing.T) {
 	}
 }
 
-func TestPostToDeadBackendIsNotRetried(t *testing.T) {
+func TestPostToDeadBackendRetriesAfterDialFailure(t *testing.T) {
 	var alive atomic.Int64
 	targets := []*url.URL{deadBackend(t), countedBackend(t, &alive)}
 	handler := LoadBalancedProxyHandler("/", targets, false)
 
-	want := []int{http.StatusBadGateway, http.StatusOK, http.StatusBadGateway, http.StatusOK}
-	for i, expected := range want {
-		if status := statusFor(handler, http.MethodPost); status != expected {
-			t.Fatalf("request %d status = %d, want %d", i, status, expected)
+	for i := 0; i < 4; i++ {
+		if status := statusFor(handler, http.MethodPost); status != http.StatusOK {
+			t.Fatalf("request %d status = %d, want %d", i, status, http.StatusOK)
 		}
 	}
-	if got := alive.Load(); got != 2 {
-		t.Fatalf("healthy backend served %d requests, want 2", got)
+	if got := alive.Load(); got != 4 {
+		t.Fatalf("healthy backend served %d requests, want 4", got)
 	}
 }
 
@@ -236,6 +235,49 @@ func TestProxyStreamsResponseBeforeUpstreamCompletes(t *testing.T) {
 		t.Fatalf("first streamed line = %q", line)
 	}
 	close(release)
+}
+
+func TestStreamingResponseOutlivesServerWriteTimeout(t *testing.T) {
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		_, _ = io.WriteString(w, "data: first\n\n")
+		w.(http.Flusher).Flush()
+		time.Sleep(150 * time.Millisecond)
+		_, _ = io.WriteString(w, "data: second\n\n")
+		w.(http.Flusher).Flush()
+	}))
+	defer upstream.Close()
+	target, err := url.Parse(upstream.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	server := httptest.NewUnstartedServer(ExtendStreaming(LoadBalancedProxyHandler("/", []*url.URL{target}, false)))
+	server.Config.WriteTimeout = 50 * time.Millisecond
+	server.Start()
+	defer server.Close()
+
+	client := &http.Client{Timeout: time.Second}
+	request, err := http.NewRequest(http.MethodGet, server.URL+"/events", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	request.Header.Set("Accept", "text/event-stream")
+	response, err := client.Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			t.Errorf("close streamed response body: %v", err)
+		}
+	}()
+	lines, err := io.ReadAll(response.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(lines), "data: second") {
+		t.Fatalf("stream body = %q, want second event after server write timeout", lines)
+	}
 }
 
 func TestProxyPreservesRedirectLocation(t *testing.T) {

@@ -5,7 +5,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 
 	platform "github.com/elrefai99/Leoxy/app/internal/core"
 
@@ -31,26 +30,13 @@ var stopCmd = &cobra.Command{
 			return fmt.Errorf("invalid PID file")
 		}
 
-		if !platform.ProcessRunning(pid) || !platform.ProcessMatches(pid, "leoxy") {
-			_ = os.Remove(pidFile)
-			return fmt.Errorf("server is not running")
-		}
-
 		if err := platform.RequestStop(pid); err != nil {
 			if forceErr := platform.ForceStop(pid); forceErr != nil {
 				_ = os.Remove(pidFile)
 				return fmt.Errorf("could not stop server: %w", forceErr)
 			}
 		}
-
-		for i := 0; i < 20; i++ {
-			if !platform.ProcessRunning(pid) {
-				break
-			}
-			time.Sleep(100 * time.Millisecond)
-		}
-
-		if platform.ProcessRunning(pid) {
+		if !platform.WaitStopped(pid, stopTimeout) {
 			if err := platform.ForceStop(pid); err != nil {
 				_ = os.Remove(pidFile)
 				return fmt.Errorf("could not stop server: %w", err)

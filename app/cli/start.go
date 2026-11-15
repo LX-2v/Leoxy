@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 
 	platform "github.com/elrefai99/Leoxy/app/internal/core"
 
@@ -16,6 +17,8 @@ const (
 	pidFile = "leoxy/keys/leoxy.pid"
 	pidLogs = "leoxy/log"
 	pidKeys = "leoxy/keys"
+
+	stopTimeout = 15 * time.Second
 )
 
 var startCmd = &cobra.Command{

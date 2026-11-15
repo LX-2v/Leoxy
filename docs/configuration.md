@@ -32,7 +32,7 @@ server:
 
 `host` and `port` define the HTTP listener. The default host in the sample is loopback, so remote clients cannot connect unless you set a reachable interface such as `0.0.0.0`. `PORT` overrides `server.port`, and `LEOXY_HOST` overrides `server.host`.
 
-Timeout values are in seconds. `connect`, `read`, `write`, and `idle` are applied to the HTTP server and proxy transport. `request` has a configuration default but is not currently applied by the runtime server code.
+Timeout values are in seconds. `connect`, `read`, `write`, and `idle` configure upstream connection and HTTP server timeouts. `request` sets the maximum time to wait for an upstream response header. SSE and Upgrade requests have their connection read and write deadlines cleared so they can remain open beyond the server read and write timeouts.
 
 ### Shared security settings
 

@@ -58,6 +58,17 @@ go run ./test/benchmark/cmd \
 
 The profiling endpoint is disabled unless the Leoxy process has `LEOXY_PPROF=true`. Treat that endpoint as privileged diagnostic access and keep it off public interfaces.
 
+To collect contention profiles, set `LEOXY_MUTEX_PROFILE_FRACTION` and `LEOXY_BLOCK_PROFILE_RATE` before starting Leoxy. Both default to disabled. A value of `1` records every mutex contention or blocking event and can add significant overhead; use it for short diagnostic runs. After the load run, download and inspect the profiles:
+
+```sh
+curl -o mutex.pb.gz 'http://localhost:80/debug/pprof/mutex'
+curl -o block.pb.gz 'http://localhost:80/debug/pprof/block'
+go tool pprof -top ./mutex.pb.gz
+go tool pprof -top ./block.pb.gz
+```
+
+The pprof endpoints must be enabled with `LEOXY_PPROF=true` to retrieve these profiles.
+
 ## Reading results
 
 Latency is the time for a request and its response body to be read. `p50`, `p95`, and `p99` are percentiles of completed requests; `max` is the slowest. Accepted statuses default to 200–399, and failed transport/read attempts are reported as `error`. A nonzero benchmark exit status indicates at least one rejected request, or a profile download failure.

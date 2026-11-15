@@ -1,9 +1,17 @@
-## [Unreleased]
+## [1.15.0] - 2026-11-15
 
 ### Added
+- add opt-in mutex and block profiling controls for runtime contention diagnostics
 - add an Astro landing page with self-hosted fonts, brand assets, and SEO metadata
 - publish Starlight guides for installation, configuration, usage, runtime reference, and FAQ
 - build and deploy the website to GitHub Pages with a website path filter
+
+### Fixed
+- bypass the global rate limiter for liveness and ping endpoints
+- eject backends after dial failures and retry replayable non-idempotent requests
+- allow graceful shutdown to finish before forcing stopped processes
+- apply the request timeout to upstream response headers and preserve SSE and Upgrade streams beyond server deadlines
+- prevent automatic upstream request compression
 
 ## [1.13.2] - 2026-11-05
 

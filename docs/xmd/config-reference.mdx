@@ -31,9 +31,11 @@ All timeout values are seconds. The sample explicitly sets the values below; the
 | `read` | `30` | HTTP server read timeout. |
 | `write` | `30` | HTTP server write timeout. |
 | `idle` | `60` | HTTP keep-alive idle timeout. |
-| `request` | `60` | Accepted by the config loader and defaulted to 60, but the current runtime does not apply it to the HTTP server or proxy. |
+| `request` | `60` | Maximum time to wait for an upstream response header. |
 
 The server also sets a 5-second read-header timeout and a 1 MiB maximum header size in code; those values are not configurable in this YAML sample.
+
+SSE and Upgrade requests have their connection read and write deadlines cleared so they can remain open beyond the server read and write timeouts.
 
 ### `server.logging`
 
@@ -173,5 +175,7 @@ These explicit overrides are implemented by the config loader:
 | `MEMORY_LIMIT_MB` | `watcher.memory_limit_mb` when the value is an integer |
 | `PROJECT_NAME` | `watcher.project_name` |
 | `Watcher_WEBHOOK_URL` | `watcher.webhook_url` |
+
+Runtime profiling is configured separately from YAML: `LEOXY_PPROF=true` exposes the Go pprof endpoints, while `LEOXY_MUTEX_PROFILE_FRACTION` and `LEOXY_BLOCK_PROFILE_RATE` set the respective runtime sampling values. Both profile rates are disabled unless explicitly set.
 
 Keep actual secrets in the environment rather than committing them to a YAML file. For CLI path options, endpoints, and validation rules, see [Reference](../reference/).

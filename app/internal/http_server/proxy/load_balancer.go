@@ -132,14 +132,27 @@ type loadBalancedTransport struct {
 	health  *targetHealth
 }
 
+func isDialError(err error) bool {
+	var opErr *net.OpError
+	return errors.As(err, &opErr) && opErr.Op == "dial"
+}
+
 func (t loadBalancedTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	resp, err := t.base.RoundTrip(r)
-	retryable := shared.RetryableMethod(r.Method) && (r.Body == nil || r.Body == http.NoBody || r.GetBody != nil)
-	if err != nil && r.Context().Err() == nil && retryable {
+	if err == nil {
+		return resp, nil
+	}
+	if r.Context().Err() != nil {
+		return nil, err
+	}
+	replayable := r.Body == nil || r.Body == http.NoBody || r.GetBody != nil
+	dial := isDialError(err)
+	retry := replayable && (shared.RetryableMethod(r.Method) || dial)
+	if dial || retry {
 		t.health.markDown(targetKey(r.URL))
 	}
-	if err == nil || len(t.targets) < 2 || !retryable {
-		return resp, err
+	if !retry || len(t.targets) < 2 {
+		return nil, err
 	}
 
 	for _, target := range t.targets {
@@ -149,18 +162,18 @@ func (t loadBalancedTransport) RoundTrip(r *http.Request) (*http.Response, error
 		if t.health.isDown(targetKey(target)) {
 			continue
 		}
-		retry := r.Clone(r.Context())
-		retry.URL.Scheme = target.Scheme
-		retry.URL.Host = target.Host
-		retry.Host = target.Host
+		next := r.Clone(r.Context())
+		next.URL.Scheme = target.Scheme
+		next.URL.Host = target.Host
+		next.Host = target.Host
 		if r.GetBody != nil {
 			body, bodyErr := r.GetBody()
 			if bodyErr != nil {
 				continue
 			}
-			retry.Body = body
+			next.Body = body
 		}
-		resp, err = t.base.RoundTrip(retry)
+		resp, err = t.base.RoundTrip(next)
 		if err == nil {
 			return resp, nil
 		}

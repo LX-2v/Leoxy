@@ -68,6 +68,8 @@ Security settings can be applied globally under `server.security` and per HTTP u
 | `/leoxy` | Bundled Leoxy information page, restricted to internal CIDRs |
 | `/debug/pprof/` | Go profiling endpoints, enabled only with `LEOXY_PPROF=true` |
 
+Set `LEOXY_MUTEX_PROFILE_FRACTION` or `LEOXY_BLOCK_PROFILE_RATE` to a non-negative integer to enable mutex or block profiling. Both are disabled by default. A value of `1` records every event and adds significant overhead; see [Benchmarking Leoxy](benchmark.md) for collecting profiles.
+
 ## Docker
 
 For the container image and Compose setup, see [Docker deployment](docker.md). The container uses port 80 by default and keeps its configuration and logs in mounted data locations.
