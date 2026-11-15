@@ -81,19 +81,18 @@ func TestGetFailsOverToHealthyBackend(t *testing.T) {
 	}
 }
 
-func TestPostToDeadBackendIsNotRetried(t *testing.T) {
+func TestPostToDeadBackendRetriesAfterDialFailure(t *testing.T) {
 	var alive atomic.Int64
 	targets := []*url.URL{deadBackend(t), countedBackend(t, &alive)}
 	handler := LoadBalancedProxyHandler("/", targets, false)
 
-	want := []int{http.StatusBadGateway, http.StatusOK, http.StatusBadGateway, http.StatusOK}
-	for i, expected := range want {
-		if status := statusFor(handler, http.MethodPost); status != expected {
-			t.Fatalf("request %d status = %d, want %d", i, status, expected)
+	for i := 0; i < 4; i++ {
+		if status := statusFor(handler, http.MethodPost); status != http.StatusOK {
+			t.Fatalf("request %d status = %d, want %d", i, status, http.StatusOK)
 		}
 	}
-	if got := alive.Load(); got != 2 {
-		t.Fatalf("healthy backend served %d requests, want 2", got)
+	if got := alive.Load(); got != 4 {
+		t.Fatalf("healthy backend served %d requests, want 4", got)
 	}
 }
 
