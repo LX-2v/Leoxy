@@ -4,6 +4,7 @@ package core
 
 import (
 	"os/exec"
+	"syscall"
 	"testing"
 	"time"
 )
@@ -25,7 +26,14 @@ func TestWaitStopped(t *testing.T) {
 		t.Fatal(err)
 	}
 	if err := process.Wait(); err != nil {
-		t.Fatal(err)
+		exitErr, ok := err.(*exec.ExitError)
+		if !ok {
+			t.Fatal(err)
+		}
+		status, statusOK := exitErr.Sys().(syscall.WaitStatus)
+		if !statusOK || !status.Signaled() || status.Signal() != syscall.SIGKILL {
+			t.Fatal(err)
+		}
 	}
 	if !WaitStopped(process.Process.Pid, time.Second) {
 		t.Fatal("WaitStopped returned false for a stopped process")
