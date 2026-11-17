@@ -5,7 +5,6 @@
 .gemini
 .gocache
 baseline/
-.agents
 dist
 node_modules
 
