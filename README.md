@@ -7,6 +7,7 @@
   [![CI](https://github.com/LX-2v/Leoxy/actions/workflows/ci.yml/badge.svg)](https://github.com/LX-2v/Leoxy/actions/workflows/ci.yml)
   [![Go version](https://img.shields.io/badge/Go-1.27.4-00ADD8?logo=go)](https://go.dev/dl/)
   [![Docker pulls](https://img.shields.io/docker/pulls/mohamed0699/leoxy)](https://hub.docker.com/r/mohamed0699/leoxy)
+  
   <br/>
   A lightweight reverse proxy built in Go.
   <br/>
