@@ -51,7 +51,11 @@ func TestRegisterHTTPIncompleteKnownLengthBodyHonorsReadTimeout(t *testing.T) {
 				w.WriteHeader(http.StatusOK)
 			}), 150*time.Millisecond, time.Second)
 			conn := dialStreamTestServer(t, server)
-			defer conn.Close()
+			defer func() {
+				if err := conn.Close(); err != nil {
+					t.Error(err)
+				}
+			}()
 			request := "POST / HTTP/1.1\r\nHost: test\r\nContent-Length: 100\r\nConnection: close\r\n"
 			request += strings.Join(test.headers, "\r\n")
 			if len(test.headers) > 0 {
@@ -75,7 +79,11 @@ func TestRegisterHTTPIncompleteChunkedBodyHonorsReadTimeout(t *testing.T) {
 		t.Error("upstream received an incomplete chunked body")
 	}), 150*time.Millisecond, time.Second)
 	conn := dialStreamTestServer(t, server)
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
 	_, err := io.WriteString(conn, "POST / HTTP/1.1\r\nHost: test\r\nTransfer-Encoding: chunked\r\nAccept: text/event-stream\r\nConnection: close\r\n\r\n1\r\nA")
 	if err != nil {
 		t.Fatal(err)
@@ -105,7 +113,11 @@ func TestRegisterHTTPSSEContinuesBeyondWriteTimeout(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer response.Body.Close()
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		t.Fatal(err)
@@ -127,7 +139,11 @@ func TestRegisterHTTPSuccessfulWebSocketUpgradeOutlivesWriteTimeout(t *testing.T
 			t.Error(err)
 			return
 		}
-		defer conn.Close()
+		defer func() {
+			if err := conn.Close(); err != nil {
+				t.Error(err)
+			}
+		}()
 		key := r.Header.Get("Sec-WebSocket-Key")
 		accept := "s3pPLMBiTxaQ9kYGzzhZRbK+xOo="
 		if key != "dGhlIHNhbXBsZSBub25jZQ==" {
@@ -142,7 +158,11 @@ func TestRegisterHTTPSuccessfulWebSocketUpgradeOutlivesWriteTimeout(t *testing.T
 		_, _ = conn.Write([]byte{0x81, 5, 'a', 'l', 'i', 'v', 'e'})
 	}), time.Second, 50*time.Millisecond)
 	conn := dialStreamTestServer(t, server)
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
 	_ = conn.SetDeadline(time.Now().Add(time.Second))
 	_, err := io.WriteString(conn, "GET / HTTP/1.1\r\nHost: test\r\nConnection: Upgrade\r\nUpgrade: websocket\r\nSec-WebSocket-Version: 13\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n\r\n")
 	if err != nil {
@@ -188,7 +208,11 @@ func TestRegisterHTTPRejectedWebSocketUpgradeReturnsUpstreamResponse(t *testing.
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer response.Body.Close()
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
 	if response.StatusCode != http.StatusBadRequest {
 		t.Fatalf("status = %d, want %d", response.StatusCode, http.StatusBadRequest)
 	}
@@ -209,7 +233,11 @@ func TestRegisterHTTPMaxBodyLimitWithStreamingHeaders(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer response.Body.Close()
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
 	if response.StatusCode != http.StatusRequestEntityTooLarge {
 		t.Fatalf("status = %d, want %d", response.StatusCode, http.StatusRequestEntityTooLarge)
 	}
