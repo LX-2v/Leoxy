@@ -19,6 +19,8 @@ ENV LEOXY_HOST=0.0.0.0
 
 WORKDIR /app
 
+RUN addgroup -S leoxy && adduser -S -G leoxy leoxy
+
 COPY --from=builder /out/leoxy /usr/local/bin/leoxy
 COPY --from=builder --chown=leoxy:leoxy /app/docs/html /app/docs/html
 

@@ -71,10 +71,7 @@ func Run() {
 	mux.Handle("/metrics", securitymiddleware.InternalOnly(internalCIDRs, http.HandlerFunc(metrics.Handler)))
 
 	if os.Getenv("LEOXY_PPROF") == "true" {
-		mux.HandleFunc("/debug/pprof/", pprof.Index)
-		mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
-		mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-		mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+		registerPprof(mux, internalCIDRs)
 	}
 
 	mux.Handle("/leoxy", securitymiddleware.InternalOnly(internalCIDRs, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -197,6 +194,13 @@ func Run() {
 		}
 	}
 	streams.Wait()
+}
+
+func registerPprof(mux *http.ServeMux, internalCIDRs []*net.IPNet) {
+	mux.Handle("/debug/pprof/", securitymiddleware.InternalOnly(internalCIDRs, http.HandlerFunc(pprof.Index)))
+	mux.Handle("/debug/pprof/profile", securitymiddleware.InternalOnly(internalCIDRs, http.HandlerFunc(pprof.Profile)))
+	mux.Handle("/debug/pprof/symbol", securitymiddleware.InternalOnly(internalCIDRs, http.HandlerFunc(pprof.Symbol)))
+	mux.Handle("/debug/pprof/trace", securitymiddleware.InternalOnly(internalCIDRs, http.HandlerFunc(pprof.Trace)))
 }
 
 func configureRuntimeProfiling() error {
