@@ -8,10 +8,7 @@ From the repository root:
 
 ```sh
 docker build -f docker/lx-2/stable/Dockerfile -t leoxy:local .
-docker run --rm \
-  -p 80:80 \
-  -v "${PWD}/leoxy:/app/leoxy" \
-  leoxy:local
+docker run --rm -p 80:80 -v "${PWD}/leoxy:/app/leoxy" leoxy:local
 ```
 
 Leoxy reads `/app/leoxy/leoxy_config.yaml` in this setup. Put the configuration file in the host `leoxy/` directory before starting, or let Leoxy create its default configuration there. The image's `PORT` is 80. To publish on a different host port, change the left side of the port mapping, for example `-p 8080:80`.
