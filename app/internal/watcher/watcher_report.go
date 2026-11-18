@@ -55,11 +55,16 @@ func (w *Writer) Write(sample Sample, limit uint64) (Report, error) {
 	}
 
 	if w.HeapProfile {
-		profilePath := filepath.Join(w.Dir, "heap-"+stamp+".pprof")
-		if err := writeHeapProfile(profilePath); err != nil {
-			log.Printf("heap profile failed: %v", err)
+		profileDir := filepath.Join(filepath.Dir(w.Dir), "pprof")
+		if err := os.MkdirAll(profileDir, 0700); err != nil {
+			log.Printf("heap profile directory failed: %v", err)
 		} else {
-			report.HeapProfile = profilePath
+			profilePath := filepath.Join(profileDir, "heap-"+stamp+".pprof")
+			if err := writeHeapProfile(profilePath); err != nil {
+				log.Printf("heap profile failed: %v", err)
+			} else {
+				report.HeapProfile = profilePath
+			}
 		}
 	}
 
@@ -72,7 +77,7 @@ func (w *Writer) Write(sample Sample, limit uint64) (Report, error) {
 	}
 
 	prune(w.Dir, "memory-report-*.json")
-	prune(w.Dir, "heap-*.pprof")
+	prune(filepath.Join(filepath.Dir(w.Dir), "pprof"), "heap-*.pprof")
 	return report, nil
 }
 
