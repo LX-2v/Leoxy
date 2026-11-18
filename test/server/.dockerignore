@@ -1,0 +1,17 @@
+baseline
+dist
+example
+script
+test
+tmp
+leoxy
+log
+*.log
+*.csv
+*.exe
+node_modules
+.env
+.env.*
+GEMINI.md
+roadmap.md
+cross-platform.md

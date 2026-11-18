@@ -10,7 +10,11 @@ import (
 )
 
 func TestWriterWritesReportAndProfile(t *testing.T) {
-	dir := t.TempDir()
+	root := t.TempDir()
+	dir := filepath.Join(root, "log")
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		t.Fatal(err)
+	}
 	writer := &Writer{
 		Dir:         dir,
 		Project:     "demo",
@@ -39,6 +43,9 @@ func TestWriterWritesReportAndProfile(t *testing.T) {
 	}
 	if report.HeapProfile == "" {
 		t.Fatal("heap profile path missing")
+	}
+	if want := filepath.Join(root, "pprof", filepath.Base(report.HeapProfile)); report.HeapProfile != want {
+		t.Fatalf("heap profile path = %q, want %q", report.HeapProfile, want)
 	}
 	if _, err := os.Stat(report.HeapProfile); err != nil {
 		t.Fatalf("heap profile not written: %v", err)
