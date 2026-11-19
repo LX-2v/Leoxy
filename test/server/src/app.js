@@ -4,6 +4,7 @@ import express from "express"
 import cors from "cors"
 import { connect } from "mongoose"
 
+// Connect to MongoDB with a bounded retry loop for container startup delays.
 const mongoDBConfig = async (retries = 5) => {
      const uri = process.env.MONGODB_URI
      try {
@@ -20,6 +21,7 @@ const mongoDBConfig = async (retries = 5) => {
      }
 }
 
+// Define the user document fields and their validation rules.
 const usersSchema = new Schema({
      fullname: {
           type: String,
@@ -63,6 +65,7 @@ export const userModel = model("User", usersSchema)
 const app = express()
 let totalRequests = 0
 
+// Attach a monotonically increasing request number for test logs.
 export function countRequests(req, res, next) {
      totalRequests += 1
      req.requestNumber = totalRequests
@@ -72,6 +75,7 @@ export function countRequests(req, res, next) {
 
 app.use(countRequests)
 
+// Permit browser requests from the configured test and live sites.
 export const allowedOrigins = [
      process.env.SITE_URL_TEST,
      process.env.SITE_URL_LIVE,
@@ -88,6 +92,7 @@ const corsOptions = {
      optionsSuccessStatus: 200,
 }
 
+// Enable CORS and parse JSON and URL-encoded request bodies.
 app.use(cors(corsOptions))
 app.use(
      express.json({
@@ -100,6 +105,7 @@ app.use(
      }),
 )
 
+// Provide a lightweight endpoint for container and proxy health checks.
 app.get("/api/health", async (req, res) => {
      try {
           res.status(200).json({ code: 200, status: "OK", data: "GG" })
@@ -111,6 +117,7 @@ app.get("/api/health", async (req, res) => {
 })
 
 
+// Return the ten most recently created confirmed users.
 app.get("/api/user/all", async (req, res) => {
      try {
           const users = await userModel.find({ status: "Confirmed" }, { _id: 1 }).limit(10).sort({ createdAt: -1 })
@@ -122,6 +129,7 @@ app.get("/api/user/all", async (req, res) => {
      }
 })
 
+// Use the configured container port or the local development default.
 const PORT = Number(process.env.PORT) || 9000
 
 async function startServer() {
@@ -139,6 +147,7 @@ async function startServer() {
      }
 }
 
+// Avoid opening sockets during tests and shut down cleanly on termination.
 if (process.env.NODE_ENV !== 'test') {
      process.on('SIGTERM', () => void gracefulShutdown('SIGTERM'))
      process.on('SIGINT', () => void gracefulShutdown('SIGINT'))
