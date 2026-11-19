@@ -4,8 +4,6 @@
 
   <h1>Leoxy</h1>
 
-  <hr />
-
   <p><strong>A lightweight reverse proxy.</strong></p>
 
   <p>LX-2 routes HTTP, WebSocket, GraphQL, TCP, and UDP traffic to configurable upstream servers.</p>
