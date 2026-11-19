@@ -1,20 +1,28 @@
+# Define the test application containers.
 services:
+# Build and run the Node.js backend used by Leoxy.
   node:
     build:
       context: .
       dockerfile: Dockerfile
+    # Load backend environment settings from the local env file.
     env_file:
       - .env
+    # Expose the backend on its container port.
     environment:
       PORT: 9000
 
+  # Run Leoxy and publish its HTTP listener for local testing.
   leoxy:
     image: mohamed0699/leoxy:latest
     ports:
       - "80:80"
+    # Grant permission to bind to a privileged port.
     cap_add:
       - NET_BIND_SERVICE
+    # Mount the test Leoxy configuration into the container.
     volumes:
       - ./leoxy:/app/leoxy
+    # Start the backend container before Leoxy.
     depends_on:
       - node

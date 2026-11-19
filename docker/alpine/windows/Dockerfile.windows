@@ -1,30 +1,45 @@
 # escape=`
+# Use backticks for Dockerfile line continuations on Windows.
+# Select the Windows Go toolchain version.
 ARG GO_VERSION=1.27.4
+# Compile on Windows Server Core LTSC 2022.
 FROM golang:${GO_VERSION}-windowsservercore-ltsc2022 AS builder
 
+# Stop PowerShell on errors and reduce progress output.
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 
+# Disable CGO and workspace mode for the build.
 ENV CGO_ENABLED=0 GOWORK=off
 
+# Set the build working directory.
 WORKDIR C:/app
 
+# Copy module manifests and download dependencies.
 COPY app/go.mod app/go.sum ./
 RUN go mod download
 
+# Copy repository source and documentation into the builder.
 COPY . .
 
+# Build the Windows CLI executable.
 WORKDIR C:/app/app
 RUN New-Item -ItemType Directory -Force C:/out | Out-Null; go build -trimpath -ldflags=\"-s -w\" -o C:/out/leoxy.exe ./cli
 
+# Use the smaller Windows Nano Server runtime image.
 FROM mcr.microsoft.com/windows/nanoserver:ltsc2022
 
+# Listen on all container interfaces using port 80.
 ENV LEOXY_HOST=0.0.0.0 PORT=80
 
+# Set the runtime working directory.
 WORKDIR C:/app
 
+# Copy the executable and bundled HTML documentation from the builder.
 COPY --from=builder C:/out/leoxy.exe C:/leoxy.exe
 COPY --from=builder C:/app/docs/html C:/app/docs/html
 
+# Document the service's HTTP port.
 EXPOSE 80
 
+# Launch the Windows executable when the container starts.
 ENTRYPOINT ["C:\\leoxy.exe"]
