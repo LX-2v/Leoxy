@@ -19,6 +19,7 @@ import (
 	"github.com/elrefai99/Leoxy/tools/internal/fs"
 )
 
+// headerFlags accepts repeatable request header command-line arguments.
 type headerFlags []string
 
 func (h *headerFlags) String() string {
@@ -33,6 +34,7 @@ func (h *headerFlags) Set(value string) error {
 	return nil
 }
 
+// config stores the request options shared by benchmark workers.
 type config struct {
 	target  string
 	method  string
@@ -42,12 +44,14 @@ type config struct {
 	limit   int64
 }
 
+// result collects one worker's status counts, latencies, and response bytes.
 type result struct {
 	latencies []time.Duration
 	statuses  map[int]uint64
 	bytes     uint64
 }
 
+// parseExpect converts a comma-separated list of accepted HTTP statuses.
 func parseExpect(value string) (map[int]bool, error) {
 	if strings.TrimSpace(value) == "" {
 		return nil, nil
@@ -63,6 +67,7 @@ func parseExpect(value string) (map[int]bool, error) {
 	return expected, nil
 }
 
+// accepted applies explicit expected codes or defaults to 2xx and 3xx.
 func accepted(status int, expected map[int]bool) bool {
 	if expected != nil {
 		return expected[status]
@@ -70,6 +75,7 @@ func accepted(status int, expected map[int]bool) bool {
 	return status >= 200 && status < 400
 }
 
+// newRequest builds one request, including optional chunking and custom headers.
 func newRequest(ctx context.Context, cfg config) (*http.Request, error) {
 	var body io.Reader
 	if len(cfg.payload) > 0 {
@@ -97,6 +103,7 @@ func newRequest(ctx context.Context, cfg config) (*http.Request, error) {
 	return req, nil
 }
 
+// worker sends requests until the shared context expires or the request limit is reached.
 func worker(ctx context.Context, client *http.Client, cfg config, attempts *atomic.Int64, out *result) {
 	for ctx.Err() == nil {
 		if cfg.limit > 0 && attempts.Add(1) > cfg.limit {
@@ -129,6 +136,7 @@ func worker(ctx context.Context, client *http.Client, cfg config, attempts *atom
 	}
 }
 
+// percentile returns the nearest-rank latency for the requested percentage.
 func percentile(values []time.Duration, p int) time.Duration {
 	index := (len(values)*p+99)/100 - 1
 	if index < 0 {
@@ -140,6 +148,7 @@ func percentile(values []time.Duration, p int) time.Duration {
 	return values[index]
 }
 
+// run parses options, executes concurrent requests, and prints benchmark results.
 func run() int {
 	var headers headerFlags
 	target := flag.String("url", "", "Leoxy URL")

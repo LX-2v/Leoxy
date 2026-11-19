@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
+# Exit on errors, unset variables, and failed pipeline commands.
 set -Eeuo pipefail
 
+# Use module-local dependency resolution instead of the workspace file.
 export GOWORK=off
 
+# Verify, format-check, vet, and race-test each Go module.
 for module in app test/benchmark; do
     echo "==> $module"
     pushd "$module" >/dev/null
@@ -17,6 +20,7 @@ for module in app test/benchmark; do
     popd >/dev/null
 done
 
+# Build the CLI after all module checks pass.
 echo "==> Building Leoxy"
 mkdir -p dist
 

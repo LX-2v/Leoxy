@@ -1,21 +1,32 @@
 <div align="center">
 
-  <img src="./docs/_static/leoxy.png" width="200" alt="Logo" />
+  <img src="./docs/_static/leoxy.png" width="96" alt="Leoxy logo" />
 
-<p>
+  <h1>Leoxy</h1>
 
-  [![CI](https://github.com/LX-2v/Leoxy/actions/workflows/ci.yml/badge.svg)](https://github.com/LX-2v/Leoxy/actions/workflows/ci.yml)
-  [![Go version](https://img.shields.io/badge/Go-1.27.4-00ADD8?logo=go)](https://go.dev/dl/)
-  [![Docker pulls](https://img.shields.io/docker/pulls/mohamed0699/leoxy)](https://hub.docker.com/r/mohamed0699/leoxy)
-  
-  <br/>
-  A lightweight reverse proxy built in Go.
-  <br/>
-</p>
+  <hr />
+
+  <p><strong>A lightweight reverse proxy.</strong></p>
+
+  <p>LX-2 routes HTTP, WebSocket, GraphQL, TCP, and UDP traffic to configurable upstream servers.</p>
+
+  <p>
+    <a href="https://github.com/LX-2v/Leoxy/releases"><img src="https://img.shields.io/badge/release-v1.15.0-blue" alt="Release v1.15.0" /></a>
+    <a href="./LICENSE"><img src="https://img.shields.io/badge/License-Apache--2.0-blue.svg" alt="License Apache 2.0" /></a>
+    <a href="https://github.com/LX-2v/Leoxy/actions/workflows/ci.yml"><img src="https://github.com/LX-2v/Leoxy/actions/workflows/ci.yml/badge.svg" alt="CI status" /></a>
+    <a href="https://go.dev/dl/"><img src="https://img.shields.io/badge/Go-1.27.4-00ADD8?logo=go" alt="Go version 1.27.4" /></a>
+    <a href="https://hub.docker.com/r/mohamed0699/leoxy"><img src="https://img.shields.io/docker/pulls/mohamed0699/leoxy" alt="Docker pulls" /></a>
+  </p>
+
+  <p>
+    <a href="#quick-start">Quick Start</a> ·
+    <a href="docs/configuration.md">Configuration</a> ·
+    <a href="docs/leoxy.md">Documentation</a> ·
+    <a href="security.md">Security</a>
+  </p>
 </div>
 
 ---
-<p> LX-2 routes HTTP requests to configurable upstream servers based on path prefixes. It supports HTTP/1.1, HTTP/2 upstreams, WebSocket upgrades, GraphQL over HTTP, and raw TCP/UDP traffic through dedicated listeners.</p>
 
 ## Deployment architecture
 

@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 )
 
+// SaveHeapProf downloads a successful pprof response to the requested file.
 func SaveHeapProf(client *http.Client, url, output string) error {
 	resp, err := client.Get(url)
 	if err != nil {

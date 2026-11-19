@@ -1,33 +1,46 @@
+# Define the application containers.
 services:
+# Run the Alpine-based Leoxy image.
   leoxy:
+    # Build the image from the repository root.
     build:
       context: ../..
       dockerfile: docker/alpine/Dockerfile
 
+    # Use the published image name and tag.
     image: ghcr.io/mohamed0699/leoxy:latest
+    # Restart after failures or host restarts.
     restart: unless-stopped
+    # Run a small init process to reap child processes.
     init: true
 
+    # Publish the configurable host port to container port 80.
     ports:
       - "${LEOXY_PORT:-80}:80"
 
+    # Configure the HTTP listener.
     environment:
       PORT: 80
       LEOXY_HOST: 0.0.0.0
 
+    # Mount configuration and persistent log storage.
     volumes:
       - ./leoxy:/app/leoxy
       - leoxy-log:/app/log
 
+    # Make the root filesystem read-only and provide temporary writable storage.
     read_only: true
     tmpfs:
       - /tmp
+    # Apply basic container hardening and drop Linux capabilities.
     security_opt:
       - "no-new-privileges:true"
 
+    # Drop all optional Linux capabilities.
     cap_drop:
       - ALL
 
+    # Check that the local liveness endpoint responds successfully.
     healthcheck:
       test:
         - CMD
@@ -41,7 +54,9 @@ services:
       start_period: 10s
       retries: 3
 
+    # Allow time for graceful shutdown.
     stop_grace_period: 10s
 
+# Create persistent storage for application logs.
 volumes:
   leoxy-log:

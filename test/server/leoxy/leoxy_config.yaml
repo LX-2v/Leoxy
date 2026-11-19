@@ -1,3 +1,4 @@
+# Configure the HTTP listener and request timeouts.
 server:
   host: "0.0.0.0"
   port: "80"
@@ -9,9 +10,11 @@ server:
     idle: 60
     request: 60
 
+  # Omit noisy dependency paths from request logs.
   logging:
     skip_paths: ["/node_modules"]
 
+  # Set test limits and trusted network policy.
   security:
     global_rate_limit: 1000
     global_rate_burst: 1000
@@ -23,6 +26,7 @@ server:
     internal_cidrs: []
     redis_connect: 22
 
+# Enable resource monitoring for the test service.
 watcher:
   status: "on"
   project_name: "test"
@@ -32,6 +36,7 @@ watcher:
   heap_profile: true
   webhook_url: "https://webhook.site/3aad78b1-aff8-4dce-9b3b-a19e6838a052"
 
+# Route API traffic to the Node.js backend container.
 upstream:
   - name: "Backend"
     path: /api
@@ -39,6 +44,7 @@ upstream:
     body: 10
     servers:
       - "http://node:9000"
+    # Set per-client and per-route request limits.
     security:
       rate_limit: 1000
       rate_limit_burst: 500

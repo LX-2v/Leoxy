@@ -2,11 +2,14 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import request from 'supertest'
 import { app, userModel } from './app.js'
 
+// Restore spies after each case to keep tests isolated.
 afterEach(() => {
      vi.restoreAllMocks()
 })
 
+// Cover successful user lookup and database failure handling.
 describe('GET /api/user/all', () => {
+     // Verify the endpoint returns the query result and applies its filters.
      it('returns confirmed users', async () => {
           const users = [{ _id: 'user-1' }]
           const sort = vi.fn().mockResolvedValue(users)
@@ -23,6 +26,7 @@ describe('GET /api/user/all', () => {
           expect(sort).toHaveBeenCalledWith({ createdAt: -1 })
      })
 
+     // Verify database errors become the documented 500 response.
      it('returns an error when the user query fails', async () => {
           vi.spyOn(userModel, 'find').mockImplementation(() => {
                throw new Error('Database unavailable')
