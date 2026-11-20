@@ -65,15 +65,23 @@ func TestRedisTLSConnection(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer listener.Close()
+	defer func() {
+		if err := listener.Close(); err != nil {
+			t.Errorf("close test Redis listener: %v", err)
+		}
+	}()
 	serverTLS := tls.NewListener(listener, &tls.Config{Certificates: certificateServer.TLS.Certificates, MinVersion: tls.VersionTLS12})
 	commands := make(chan []string, 2)
+	serverDone := make(chan error, 1)
 	go func() {
 		conn, acceptErr := serverTLS.Accept()
 		if acceptErr != nil {
+			serverDone <- acceptErr
 			return
 		}
-		defer conn.Close()
+		defer func() {
+			serverDone <- conn.Close()
+		}()
 		reader := bufio.NewReader(conn)
 		for i := 0; i < 2; i++ {
 			args, readErr := readRedisCommand(reader)
@@ -104,6 +112,9 @@ func TestRedisTLSConnection(t *testing.T) {
 	}
 	if got := <-commands; len(got) == 0 || got[0] != "EVAL" {
 		t.Fatalf("second Redis command = %q, want EVAL", got)
+	}
+	if err := <-serverDone; err != nil {
+		t.Errorf("close test Redis TLS connection: %v", err)
 	}
 }
 
