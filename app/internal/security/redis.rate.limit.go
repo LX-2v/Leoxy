@@ -3,6 +3,7 @@ package security
 import (
 	"bufio"
 	"bytes"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net"
@@ -20,10 +21,12 @@ type redisConn struct {
 }
 
 type RedisLimiter struct {
-	addr     string
-	password string
-	database int
-	pool     chan *redisConn
+	addr      string
+	password  string
+	database  int
+	tls       bool
+	tlsConfig *tls.Config
+	pool      chan *redisConn
 }
 
 const redisTokenBucketScript = `local time = redis.call('TIME')
@@ -44,7 +47,11 @@ redis.call('EXPIRE', KEYS[1], math.max(1, math.ceil(burst * 120 / tonumber(ARGV[
 return allowed`
 
 func NewRedisLimiter(connect uint, addr, password string, database int) *RedisLimiter {
-	return &RedisLimiter{addr: addr, password: password, database: database, pool: make(chan *redisConn, connect)}
+	return newRedisLimiter(connect, addr, password, database, false)
+}
+
+func newRedisLimiter(connect uint, addr, password string, database int, useTLS bool) *RedisLimiter {
+	return &RedisLimiter{addr: addr, password: password, database: database, tls: useTLS, pool: make(chan *redisConn, connect)}
 }
 
 func RedisRateLimit(connect uint, addr, password string, database, limit int, key string, next http.Handler) http.Handler {
@@ -76,6 +83,10 @@ func RedisRateLimitWithFailOpen(connect uint, addr, password string, database, l
 }
 
 func RedisTokenBucketRateLimit(connect uint, addr, password string, database, limit, burst int, key string, failOpen bool, next http.Handler) http.Handler {
+	return RedisTokenBucketRateLimitWithTLS(connect, addr, password, database, false, limit, burst, key, failOpen, next)
+}
+
+func RedisTokenBucketRateLimitWithTLS(connect uint, addr, password string, database int, useTLS bool, limit, burst int, key string, failOpen bool, next http.Handler) http.Handler {
 	localFallback := RateLimit(0, 0, 0, 0, limit, burst, key, next)
 	if strings.TrimSpace(addr) == "" || limit <= 0 {
 		return localFallback
@@ -83,7 +94,7 @@ func RedisTokenBucketRateLimit(connect uint, addr, password string, database, li
 	if burst <= 0 {
 		burst = limit
 	}
-	limiter := NewRedisLimiter(connect, addr, password, database)
+	limiter := newRedisLimiter(connect, addr, password, database, useTLS)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		allowed, err := limiter.AllowTokenBucket(key, limit, burst)
 		if err != nil {
@@ -161,7 +172,21 @@ func (limiter *RedisLimiter) acquire() (*redisConn, error) {
 		return conn, nil
 	default:
 	}
-	raw, err := net.DialTimeout("tcp", limiter.addr, redisTimeout)
+	dialer := &net.Dialer{Timeout: redisTimeout}
+	var raw net.Conn
+	var err error
+	if limiter.tls {
+		config := &tls.Config{MinVersion: tls.VersionTLS12}
+		if limiter.tlsConfig != nil {
+			config = limiter.tlsConfig.Clone()
+			if config.MinVersion < tls.VersionTLS12 {
+				config.MinVersion = tls.VersionTLS12
+			}
+		}
+		raw, err = tls.DialWithDialer(dialer, "tcp", limiter.addr, config)
+	} else {
+		raw, err = dialer.Dial("tcp", limiter.addr)
+	}
 	if err != nil {
 		return nil, err
 	}

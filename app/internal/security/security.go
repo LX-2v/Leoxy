@@ -82,6 +82,9 @@ func accessControl(allow, deny []string, methods, paths, apiKeys []string, jwtSe
 			http.Error(w, "authentication required", http.StatusUnauthorized)
 			return
 		}
+		if validAPIKey(r.Header.Get("Authorization"), apiKeys) {
+			r.Header.Del("Authorization")
+		}
 		if requireMTLS && (r.TLS == nil || len(r.TLS.PeerCertificates) == 0 || len(r.TLS.VerifiedChains) == 0) {
 			http.Error(w, "client certificate required", http.StatusUnauthorized)
 			return

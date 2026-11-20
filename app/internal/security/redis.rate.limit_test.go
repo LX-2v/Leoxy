@@ -2,12 +2,15 @@ package security
 
 import (
 	"bufio"
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -48,6 +51,59 @@ func TestRedisTokenBucketRateLimit(t *testing.T) {
 	case err := <-errors:
 		t.Fatal(err)
 	default:
+	}
+}
+
+func TestRedisTLSConnection(t *testing.T) {
+	certificateServer := httptest.NewTLSServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+	defer certificateServer.Close()
+	parsed, err := url.Parse(certificateServer.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer listener.Close()
+	serverTLS := tls.NewListener(listener, &tls.Config{Certificates: certificateServer.TLS.Certificates, MinVersion: tls.VersionTLS12})
+	commands := make(chan []string, 2)
+	go func() {
+		conn, acceptErr := serverTLS.Accept()
+		if acceptErr != nil {
+			return
+		}
+		defer conn.Close()
+		reader := bufio.NewReader(conn)
+		for i := 0; i < 2; i++ {
+			args, readErr := readRedisCommand(reader)
+			if readErr != nil {
+				return
+			}
+			commands <- args
+			if args[0] == "AUTH" {
+				_, _ = io.WriteString(conn, "+OK\r\n")
+			} else {
+				_, _ = io.WriteString(conn, ":1\r\n")
+			}
+		}
+	}()
+	rootCert, err := x509.ParseCertificate(certificateServer.TLS.Certificates[0].Certificate[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	roots := x509.NewCertPool()
+	roots.AddCert(rootCert)
+	limiter := newRedisLimiter(1, "localhost:"+strings.Split(listener.Addr().String(), ":")[1], "redis-secret", 0, true)
+	limiter.tlsConfig = &tls.Config{RootCAs: roots, ServerName: parsed.Hostname()}
+	if allowed, err := limiter.AllowTokenBucket("test", 60, 1); err != nil || !allowed {
+		t.Fatalf("AllowTokenBucket() = %v, %v; want true, nil", allowed, err)
+	}
+	if got := <-commands; len(got) != 2 || got[0] != "AUTH" || got[1] != "redis-secret" {
+		t.Fatalf("first Redis command = %q, want AUTH with configured password", got)
+	}
+	if got := <-commands; len(got) == 0 || got[0] != "EVAL" {
+		t.Fatalf("second Redis command = %q, want EVAL", got)
 	}
 }
 
