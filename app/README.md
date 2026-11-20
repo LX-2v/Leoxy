@@ -26,4 +26,4 @@ module github.com/elrefai99/Leoxy/app
 
 ## Version
 
-Current version: `v3.8.2` (defined in `app/cli/main.go`)
+Current version: `v1.15.0` (defined in `app/cli/main.go`)

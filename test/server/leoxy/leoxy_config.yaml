@@ -28,13 +28,13 @@ server:
 
 # Enable resource monitoring for the test service.
 watcher:
-  status: "on"
+  status: "off"
   project_name: "test"
   memory_limit_mb: 500
   interval_seconds: 10
   cooldown_seconds: 30
   heap_profile: true
-  webhook_url: "https://webhook.site/3aad78b1-aff8-4dce-9b3b-a19e6838a052"
+  webhook_url: ""
 
 # Route API traffic to the Node.js backend container.
 upstream:
