@@ -64,6 +64,7 @@ type Security struct {
 	RedisConnect      uint     `mapstructure:"redis_connect"`
 	RedisAddr         string   `mapstructure:"redis_addr"`
 	RedisPassword     string   `mapstructure:"redis_password"`
+	RedisTLS          bool     `mapstructure:"redis_tls"`
 	RedisDB           int      `mapstructure:"redis_db"`
 	RedisFailOpen     bool     `mapstructure:"redis_fail_open"`
 	TrustedProxyCIDRs []string `mapstructure:"trusted_proxy_cidrs"`
@@ -154,6 +155,9 @@ func Load() (*ServerConfig, error) {
 	}
 	if value := os.Getenv("REDIS_PASSWORD"); value != "" {
 		cfg.Server.Security.RedisPassword = value
+	}
+	if value := os.Getenv("REDIS_TLS"); value != "" {
+		cfg.Server.Security.RedisTLS = strings.EqualFold(strings.TrimSpace(value), "true") || strings.TrimSpace(value) == "1"
 	}
 	if value := os.Getenv("MEMORY_LIMIT_MB"); value != "" {
 		if limit, err := strconv.Atoi(value); err == nil {

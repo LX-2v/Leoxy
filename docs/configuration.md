@@ -51,6 +51,7 @@ Timeout values are in seconds. `connect`, `read`, `write`, and `idle` configure 
 | `allowed_paths` | Optional path patterns accepted by the access policy. An empty list does not impose a path allowlist. |
 | `max_body` | Maximum HTTP request body size in MiB. |
 | `redis_addr`, `redis_password`, `redis_db` | Redis connection settings for the shared global rate limiter. |
+| `redis_tls` | Enable verified TLS for Redis connections. Set this when Redis traffic crosses an untrusted network. |
 | `redis_fail_open` | If true, use the local global limiter when Redis is unavailable. |
 | `trusted_proxy_cidrs` | Proxy ranges trusted when resolving the original client address from forwarding headers. |
 | `internal_cidrs` | Networks allowed to access internal endpoints such as `/health/ready` and `/leoxy`. |
@@ -59,7 +60,7 @@ Timeout values are in seconds. `connect`, `read`, `write`, and `idle` configure 
 
 Rate values are tokens per minute with a burst capacity. Zero disables the corresponding limit. The shared global limit is charged before route policies; use per-upstream `security` for route-specific limits.
 
-The runtime environment overrides supported by the current loader include `RATE_LIMIT`, `JWT_SECRET`, `JWT_ISSUER`, `JWT_AUDIENCE`, `API_KEYS`, and `REDIS_PASSWORD`. `API_KEYS` is a comma-separated list. Keep secrets out of committed YAML files.
+The runtime environment overrides supported by the current loader include `RATE_LIMIT`, `JWT_SECRET`, `JWT_ISSUER`, `JWT_AUDIENCE`, `API_KEYS`, `REDIS_PASSWORD`, and `REDIS_TLS`. Set `REDIS_TLS=true` to enable verified TLS. `API_KEYS` is a comma-separated list. Keep secrets out of committed YAML files.
 
 ## HTTP upstreams
 

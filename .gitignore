@@ -7,6 +7,7 @@
 baseline/
 dist
 node_modules
+target
 
 # Logs
 log

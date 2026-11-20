@@ -89,6 +89,7 @@ All CIDR entries must be valid network ranges such as `192.0.2.0/24`. `API_KEYS`
 | `redis_connect` | `16` | Capacity of the Redis connection pool used by the shared global rate limiter. A value of zero is replaced with `16`. |
 | `redis_addr` | `""` | Redis address for the shared global HTTP rate limiter. If blank, the limiter uses local in-process memory. |
 | `redis_password` | `""` | Redis password. `REDIS_PASSWORD` overrides this setting. |
+| `redis_tls` | `false` | Enable TLS for Redis connections, with server certificate and hostname verification. Set to `true` when Redis traffic crosses an untrusted network; `REDIS_TLS=true` is the environment override. |
 | `redis_db` | `0` | Redis logical database number. |
 | `redis_fail_open` | `false` | If true, a Redis error falls back to the local global rate limiter. If false, a Redis error returns HTTP 503. |
 
@@ -172,6 +173,7 @@ These explicit overrides are implemented by the config loader:
 | `JWT_SECRET`, `JWT_ISSUER`, `JWT_AUDIENCE` | Corresponding fields under `server.security` |
 | `API_KEYS` | `server.security.api_keys` as a comma-separated list |
 | `REDIS_PASSWORD` | `server.security.redis_password` |
+| `REDIS_TLS` | `server.security.redis_tls` (`true` or `1` enables TLS) |
 | `MEMORY_LIMIT_MB` | `watcher.memory_limit_mb` when the value is an integer |
 | `PROJECT_NAME` | `watcher.project_name` |
 | `Watcher_WEBHOOK_URL` | `watcher.webhook_url` |

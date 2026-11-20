@@ -35,6 +35,41 @@ func TestAccessControl(t *testing.T) {
 	}
 }
 
+func TestAccessControlDoesNotForwardLeoxyBearerAPIKey(t *testing.T) {
+	tests := []struct {
+		name          string
+		authorization string
+		apiKey        string
+		wantAuth      string
+	}{
+		{name: "Leoxy key", authorization: "Bearer leoxy-secret", wantAuth: ""},
+		{name: "upstream token", authorization: "Bearer upstream-token", apiKey: "leoxy-secret", wantAuth: "Bearer upstream-token"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			handler, err := AccessControl(nil, nil, nil, nil, []string{"leoxy-secret"}, "", false, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if got := r.Header.Get("Authorization"); got != test.wantAuth {
+					t.Errorf("Authorization = %q, want %q", got, test.wantAuth)
+				}
+				w.WriteHeader(http.StatusNoContent)
+			}))
+			if err != nil {
+				t.Fatal(err)
+			}
+			request := httptest.NewRequest(http.MethodGet, "/", nil)
+			request.Header.Set("Authorization", test.authorization)
+			if test.apiKey != "" {
+				request.Header.Set("X-API-Key", test.apiKey)
+			}
+			response := httptest.NewRecorder()
+			handler.ServeHTTP(response, request)
+			if response.Code != http.StatusNoContent {
+				t.Fatalf("status = %d, want %d", response.Code, http.StatusNoContent)
+			}
+		})
+	}
+}
+
 func TestAccessControlIgnoresForgedClientIPHeaders(t *testing.T) {
 	handler, err := AccessControl([]string{"10.0.0.0/8"}, nil, nil, nil, nil, "", false, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK) }))
 	if err != nil {

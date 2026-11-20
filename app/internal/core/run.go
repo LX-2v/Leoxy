@@ -222,11 +222,12 @@ func configureRuntimeProfiling() error {
 }
 
 func newHTTPRoot(mux, protected http.Handler, security file.Security) http.Handler {
-	limited := securitymiddleware.RedisTokenBucketRateLimit(
+	limited := securitymiddleware.RedisTokenBucketRateLimitWithTLS(
 		security.RedisConnect,
 		security.RedisAddr,
 		security.RedisPassword,
 		security.RedisDB,
+		security.RedisTLS,
 		security.GlobalRateLimit,
 		security.GlobalRateBurst,
 		"leoxy:global",
