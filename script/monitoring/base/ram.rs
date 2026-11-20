@@ -2,7 +2,7 @@ use std::process::Command;
 use std::thread;
 use std::time::Duration;
 
-fn main() {
+pub fn run() {
     println!("Monitoring Leoxy RAM usage. Press Ctrl+C to stop.");
 
     loop {

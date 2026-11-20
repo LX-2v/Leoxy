@@ -3,7 +3,7 @@ use std::process::Command;
 use std::thread;
 use std::time::{Duration, Instant};
 
-fn main() {
+pub fn run() {
     let cores = thread::available_parallelism()
         .map(|count| count.get())
         .unwrap_or(1) as f64;
