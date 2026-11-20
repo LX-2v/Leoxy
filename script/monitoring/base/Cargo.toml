@@ -8,4 +8,3 @@ name = "base"
 path = "main.rs"
 
 [dependencies]
-sysinfo = "0.40"
