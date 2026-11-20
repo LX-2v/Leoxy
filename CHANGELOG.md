@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+- block private webhook destinations and redirects
+- allow non-root containers to bind port 80 with `NET_BIND_SERVICE`
+
 ## [1.15.0] - 2026-11-15
 
 ### Added
