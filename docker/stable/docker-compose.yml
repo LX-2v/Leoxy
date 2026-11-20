@@ -3,13 +3,13 @@ name: leoxy
 
 # Define the application containers.
 services:
-# Run Leoxy from the stable Dockerfile.
+  # Run Leoxy from the stable Dockerfile.
   leoxy:
     build:
       context: ../..
       dockerfile: docker/stable/Dockerfile
       args:
-        LEOXY_VERSION: ${LEOXY_VERSION:-1.15.0}
+        LEOXY_VERSION: ${LEOXY_VERSION:-1.15.1}
     # Tag the built image with configurable image name and tag.
     image: ${LEOXY_IMAGE:-mohamed0699/leoxy}:${LEOXY_TAG:-latest}
     # Match the non-root account created in the image.
