@@ -3,13 +3,13 @@ name: leoxy
 
 # Define the application containers.
 services:
-# Run Leoxy from the stable Dockerfile.
+  # Run Leoxy from the stable Dockerfile.
   leoxy:
     build:
       context: ../..
       dockerfile: docker/stable/Dockerfile
       args:
-        LEOXY_VERSION: ${LEOXY_VERSION:-1.15.0}
+        LEOXY_VERSION: ${LEOXY_VERSION:-1.15.1}
     # Tag the built image with configurable image name and tag.
     image: ${LEOXY_IMAGE:-mohamed0699/leoxy}:${LEOXY_TAG:-latest}
     # Match the non-root account created in the image.
@@ -43,9 +43,8 @@ services:
     # Drop all optional Linux capabilities.
     cap_drop:
       - ALL
-    # Allow the unprivileged process to bind to port 80.
-    sysctls:
-      net.ipv4.ip_unprivileged_port_start: "0"
+    cap_add:
+      - NET_BIND_SERVICE
     # Bound memory, process count, and open file descriptors.
     mem_limit: 512m
     pids_limit: 512

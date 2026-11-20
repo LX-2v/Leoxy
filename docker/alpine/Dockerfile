@@ -24,7 +24,7 @@ RUN GOWORK=off CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /
 FROM golang:${GO_VERSION}
 
 # Listen on all container interfaces.
-ENV LEOXY_HOST=0.0.0.0
+ENV LEOXY_HOST=0.0.0.0 PORT=80
 
 # Set the runtime working directory.
 WORKDIR /app

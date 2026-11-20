@@ -8,14 +8,14 @@ From the repository root:
 
 ```sh
 docker build -f docker/lx-2/stable/Dockerfile -t leoxy:local .
-docker run --rm -p 80:80 -v "${PWD}/leoxy:/app/leoxy" leoxy:local
+docker run --rm --cap-add=NET_BIND_SERVICE -p 80:80 -v "${PWD}/leoxy:/app/leoxy" leoxy:local
 ```
 
-Leoxy reads `/app/leoxy/leoxy_config.yaml` in this setup. Put the configuration file in the host `leoxy/` directory before starting, or let Leoxy create its default configuration there. The image's `PORT` is 80. To publish on a different host port, change the left side of the port mapping, for example `-p 8080:80`.
+Leoxy reads `/app/leoxy/leoxy_config.yaml` in this setup. Put the configuration file in the host `leoxy/` directory before starting, or let Leoxy create its default configuration there. The image listens on port 80. `NET_BIND_SERVICE` lets the non-root process bind that port when the runtime restricts low ports. To publish on a different host port, change the left side of the port mapping, for example `-p 8080:80`.
 
 ## Compose deployment
 
-The production Compose definition is `docker/lx-2/stable/docker-compose.yml`. It publishes `${LEOXY_PORT:-80}:80`, mounts `./leoxy` at `/app/leoxy`, and mounts a named volume at `/app/log`. It enables restart-on-failure recovery, a read-only root filesystem, a temporary filesystem for `/tmp`, drops Linux capabilities, and sets `no-new-privileges`.
+The production Compose definition is `docker/lx-2/stable/docker-compose.yml`. It publishes `${LEOXY_PORT:-80}:80`, mounts `./leoxy` at `/app/leoxy`, and mounts a named volume at `/app/log`. It enables restart-on-failure recovery, a read-only root filesystem, a temporary filesystem for `/tmp`, drops Linux capabilities except `NET_BIND_SERVICE`, and sets `no-new-privileges`.
 
 To build and start with Compose, use a Compose file whose `build.dockerfile` points to `docker/lx-2/stable/Dockerfile` and whose context is the repository root. The checked-in Compose file currently names `docker/lx-2/Dockerfile`, which is not present in the repository; correct that path in your local deployment definition or build and run the image with the commands above.
 

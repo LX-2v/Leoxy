@@ -13,7 +13,7 @@ docker build -f docker/alpine/Dockerfile -t leoxy:alpine .
 The image listens on port `80`. Run it with your Leoxy configuration mounted:
 
 ```sh
-docker run --rm -p 80:80 -v "${PWD}/leoxy:/app/leoxy" leoxy:alpine
+docker run --rm --cap-add=NET_BIND_SERVICE -p 80:80 -v "${PWD}/leoxy:/app/leoxy" leoxy:alpine
 ```
 
 ## Windows

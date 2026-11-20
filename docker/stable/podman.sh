@@ -18,7 +18,7 @@ fail() { echo "FAIL: $*" >&2; podman logs "$name" >&2 || true; exit 1; }
 code() { curl -s -o /dev/null -w '%{http_code}' "$@"; }
 
 # Start the image with its HTTP port bound only on localhost.
-podman run -d --name "$name" --health-interval=2s -p "127.0.0.1:$port:80" \
+podman run -d --name "$name" --health-interval=2s --cap-add=NET_BIND_SERVICE -p "127.0.0.1:$port:80" \
 	-e PORT=80 -e LEOXY_HOST=0.0.0.0 "$image" >/dev/null
 
 # Wait up to one minute for the container health check to pass.
