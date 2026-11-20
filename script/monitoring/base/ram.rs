@@ -1,47 +1,37 @@
-use std::process::Command;
 use std::thread;
 use std::time::Duration;
+use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, System};
 
 pub fn run() {
+    let Ok(mut system) = System::new() else {
+        eprintln!("Failed to initialize system monitor");
+        return;
+    };
+    let refresh_kind = ProcessRefreshKind::nothing().with_memory();
+
     println!("Monitoring Leoxy RAM usage. Press Ctrl+C to stop.");
 
     loop {
-        let output = Command::new("powershell.exe")
-            .args([
-                "-NoProfile",
-                "-NonInteractive",
-                "-Command",
-                "Get-Process -Name leoxy -ErrorAction SilentlyContinue | ForEach-Object { \"$($_.Id),$($_.ProcessName),$($_.WorkingSet64)\" }",
-            ])
-            .output();
+        system.refresh_processes_specifics(ProcessesToUpdate::All, true, refresh_kind);
+        let mut found = false;
 
-        match output {
-            Ok(result) if result.status.success() => {
-                let processes = String::from_utf8_lossy(&result.stdout);
-                if processes.trim().is_empty() {
-                    println!("Leoxy process not found");
-                } else {
-                    for line in processes.lines() {
-                        let fields: Vec<&str> = line.trim().split(',').collect();
-                        if fields.len() == 3 {
-                            if let (Ok(pid), Ok(bytes)) =
-                                (fields[0].parse::<u32>(), fields[2].parse::<u64>())
-                            {
-                                println!(
-                                    "PID: {pid}, Process: {}, RAM: {:.2} MB",
-                                    fields[1],
-                                    bytes as f64 / 1_048_576.0
-                                );
-                            }
-                        }
-                    }
-                }
+        for (pid, process) in system.processes() {
+            let process_name = process.name().to_string_lossy();
+            let process_name = process_name
+                .strip_suffix(".exe")
+                .unwrap_or(process_name.as_ref());
+            if process_name.eq_ignore_ascii_case("leoxy") {
+                found = true;
+                println!(
+                    "PID: {pid}, Process: {}, RAM: {:.2} MB",
+                    process.name().to_string_lossy(),
+                    process.memory() as f64 / 1_048_576.0
+                );
             }
-            Ok(result) => eprintln!(
-                "Failed to read Leoxy RAM: {}",
-                String::from_utf8_lossy(&result.stderr).trim()
-            ),
-            Err(error) => eprintln!("Failed to run PowerShell: {error}"),
+        }
+
+        if !found {
+            println!("Leoxy process not found");
         }
 
         thread::sleep(Duration::from_secs(1));
