@@ -103,7 +103,7 @@ func Start(options Options, onSample func(Sample), done <-chan struct{}) {
 	hostname, _ := os.Hostname()
 	webhook := validWebhook(options.WebhookURL)
 	limit := uint64(options.LimitMB) * 1024 * 1024
-	client := &http.Client{}
+	client := webhookClient(&http.Client{})
 
 	writer := &Writer{
 		Dir:         options.Dir,

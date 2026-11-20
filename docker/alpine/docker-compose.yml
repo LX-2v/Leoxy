@@ -39,6 +39,8 @@ services:
     # Drop all optional Linux capabilities.
     cap_drop:
       - ALL
+    cap_add:
+      - NET_BIND_SERVICE
 
     # Check that the local liveness endpoint responds successfully.
     healthcheck:
