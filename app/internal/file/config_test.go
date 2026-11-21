@@ -63,6 +63,22 @@ func TestValidateRejectsNegativeUpstreamRateLimit(t *testing.T) {
 	}
 }
 
+func TestValidateRejectsInvalidStreamTargets(t *testing.T) {
+	for _, protocol := range []string{"tcp", "udp"} {
+		t.Run(protocol, func(t *testing.T) {
+			cfg := config(Upstream{
+				Name:      "stream",
+				Protocol:  protocol,
+				Listen:    ":9000",
+				ServerURL: "localhost",
+			})
+			if err := Validate(cfg); err == nil || !strings.Contains(err.Error(), "invalid "+protocol+" server_url") {
+				t.Fatalf("validation error = %v, want invalid %s target", err, protocol)
+			}
+		})
+	}
+}
+
 func TestLoadRateLimitPolicies(t *testing.T) {
 	tests := []struct {
 		name      string

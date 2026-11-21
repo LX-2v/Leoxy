@@ -12,6 +12,41 @@ import (
 const maxTCPConnections = 1024
 const tcpIdleTimeout = 5 * time.Minute
 
+type connectionTracker struct {
+	mutex  sync.Mutex
+	items  map[net.Conn]struct{}
+	closed bool
+}
+
+func (t *connectionTracker) track(conn net.Conn) bool {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+	if t.closed {
+		_ = conn.Close()
+		return false
+	}
+	if t.items == nil {
+		t.items = make(map[net.Conn]struct{})
+	}
+	t.items[conn] = struct{}{}
+	return true
+}
+
+func (t *connectionTracker) untrack(conn net.Conn) {
+	t.mutex.Lock()
+	delete(t.items, conn)
+	t.mutex.Unlock()
+}
+
+func (t *connectionTracker) closeAll() {
+	t.mutex.Lock()
+	t.closed = true
+	for conn := range t.items {
+		_ = conn.Close()
+	}
+	t.mutex.Unlock()
+}
+
 func RunTCPProxy(listener net.Listener, target string, policy *shared.StreamPolicy, done <-chan struct{}) error {
 	defer func() {
 		if err := listener.Close(); err != nil && !shared.IsClosedError(err) {
@@ -19,9 +54,11 @@ func RunTCPProxy(listener net.Listener, target string, policy *shared.StreamPoli
 		}
 	}()
 	connections := make(chan struct{}, maxTCPConnections)
+	active := &connectionTracker{}
 	go func() {
 		<-done
 		_ = listener.Close()
+		active.closeAll()
 	}()
 
 	var delay time.Duration
@@ -59,12 +96,18 @@ func RunTCPProxy(listener net.Listener, target string, policy *shared.StreamPoli
 		}
 		select {
 		case connections <- struct{}{}:
+			if !active.track(client) {
+				<-connections
+				policy.Release(host)
+				continue
+			}
 			go func() {
 				defer func() {
 					<-connections
 					policy.Release(host)
+					active.untrack(client)
 				}()
-				proxyTCPConnection(client, target)
+				proxyTCPConnection(client, target, active)
 			}()
 		default:
 			policy.Release(host)
@@ -75,7 +118,7 @@ func RunTCPProxy(listener net.Listener, target string, policy *shared.StreamPoli
 	}
 }
 
-func proxyTCPConnection(client net.Conn, target string) {
+func proxyTCPConnection(client net.Conn, target string, active *connectionTracker) {
 	defer func() {
 		if err := client.Close(); err != nil {
 			log.Printf("TCP client close failed: %v", err)
@@ -86,7 +129,11 @@ func proxyTCPConnection(client net.Conn, target string) {
 		log.Printf("TCP upstream %q connection failed: %v", target, err)
 		return
 	}
+	if !active.track(upstream) {
+		return
+	}
 	defer func() {
+		active.untrack(upstream)
 		if err := upstream.Close(); err != nil {
 			log.Printf("TCP upstream close failed: %v", err)
 		}

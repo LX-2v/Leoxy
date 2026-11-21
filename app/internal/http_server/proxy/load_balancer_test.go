@@ -120,11 +120,15 @@ func TestForwardedHeadersIgnoreClientSpoofing(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		req.Header.Set("X-Forwarded-For", "10.9.9.9")
 		req.Header.Set("X-Real-IP", "10.9.9.9")
+		req.Header.Set("Forwarded", "for=10.9.9.9;proto=https")
 		handler.ServeHTTP(httptest.NewRecorder(), req)
 
 		header := <-seen
 		if strings.Contains(header.Get("X-Forwarded-For"), "10.9.9.9") {
 			t.Fatalf("forged X-Forwarded-For reached the upstream: %q", header.Get("X-Forwarded-For"))
+		}
+		if forwarded := header.Get("Forwarded"); forwarded != "" {
+			t.Fatalf("client Forwarded header reached the upstream: %q", forwarded)
 		}
 		realIP := header.Get("X-Real-IP")
 		if forward && realIP != "192.0.2.1" {
