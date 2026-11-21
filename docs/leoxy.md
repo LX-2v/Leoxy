@@ -1,6 +1,6 @@
 # Leoxy
 
-Leoxy is a Go reverse proxy that listens on one HTTP(S) endpoint and routes traffic to configured upstreams. It also supports separate TCP and UDP listeners. This guide describes the current `app/` implementation.
+Leoxy is a lightweight, on-demand proxy for small projects and development environments.
 
 ## How requests are routed
 
