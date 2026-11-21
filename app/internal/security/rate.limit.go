@@ -30,7 +30,9 @@ func RateLimit(perIP, ipBurst, perRoute, routeBurst, global, globalBurst int, ro
 
 	candidates := []ILimit{
 		{perIP, ipBurst, func(r *http.Request) string { return "ip:" + limiterIP(common.GetClientIP(r, trusted)) }},
-		{perRoute, routeBurst, func(*http.Request) string { return "route:" + route }},
+		{perRoute, routeBurst, func(r *http.Request) string {
+			return "route:" + route + ":ip:" + limiterIP(common.GetClientIP(r, trusted))
+		}},
 		{global, globalBurst, func(*http.Request) string { return "global" }},
 	}
 
