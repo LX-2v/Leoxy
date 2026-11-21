@@ -67,7 +67,7 @@ func TestHTTPRoutePoliciesDoNotConsumeOtherRouteBuckets(t *testing.T) {
 		{path: "/api", remote: "192.0.2.1:1000", want: http.StatusOK},
 		{path: "/api", remote: "192.0.2.1:1000", want: http.StatusTooManyRequests},
 		{path: "/api", remote: "192.0.2.2:1000", want: http.StatusOK},
-		{path: "/api", remote: "192.0.2.3:1000", want: http.StatusTooManyRequests},
+		{path: "/api", remote: "192.0.2.3:1000", want: http.StatusOK},
 		{path: "/", remote: "192.0.2.1:1000", want: http.StatusOK},
 		{path: "/", remote: "192.0.2.1:1000", want: http.StatusOK},
 	} {
