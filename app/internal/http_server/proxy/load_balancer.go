@@ -113,6 +113,7 @@ func NewLoadBalancedProxy(targets []*url.URL, forwardIP bool, trustedProxyCIDRs 
 		}
 		originalHost := r.Host
 		pr.SetURL(target)
+		pr.Out.Header.Del("Forwarded")
 		pr.Out.Header.Del("CF-Connecting-IP")
 		pr.Out.Header.Del("X-Real-IP")
 		pr.Out.Header.Del("X-API-Key")

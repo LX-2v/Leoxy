@@ -214,9 +214,13 @@ func Validate(cfg *ServerConfig) error {
 		switch protocol {
 		case "tcp", "udp":
 			listen := strings.TrimSpace(upstream.Listen)
-			if listen == "" || strings.TrimSpace(upstream.ServerURL) == "" {
+			target := strings.TrimSpace(upstream.ServerURL)
+			if listen == "" || target == "" {
 				errs = append(errs, fmt.Errorf("upstream %q: %s requires listen and server_url", name, protocol))
 				continue
+			}
+			if err := validateStreamTarget(target); err != nil {
+				errs = append(errs, fmt.Errorf("upstream %q: invalid %s server_url: %w", name, protocol, err))
 			}
 			key := protocol + "|" + listen
 			if previous, ok := listeners[key]; ok {
@@ -265,6 +269,18 @@ func Validate(cfg *ServerConfig) error {
 		errs = append(errs, errors.New("require_mtls needs server.security tls_cert, tls_key and client_ca"))
 	}
 	return errors.Join(errs...)
+}
+
+func validateStreamTarget(target string) error {
+	host, port, err := net.SplitHostPort(target)
+	if err != nil || host == "" {
+		return fmt.Errorf("must be a host and port")
+	}
+	number, err := strconv.Atoi(port)
+	if err != nil || number < 1 || number > 65535 {
+		return fmt.Errorf("port must be between 1 and 65535")
+	}
+	return nil
 }
 
 func isReserved(path string) bool {

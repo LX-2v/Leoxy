@@ -178,3 +178,38 @@ func TestTCPProxyStopsWhenDoneIsClosed(t *testing.T) {
 		t.Fatal("RunTCPProxy did not stop")
 	}
 }
+
+func TestTCPProxyStopsActiveConnectionsWhenDoneIsClosed(t *testing.T) {
+	proxyAddr, stop, errs := startProxy(t, startEcho(t))
+	client, err := net.Dial("tcp", proxyAddr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := client.Close(); err != nil {
+			t.Errorf("client.Close() failed: %v", err)
+		}
+	}()
+	if err := client.SetDeadline(time.Now().Add(3 * time.Second)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.Write([]byte("ping")); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := io.ReadFull(client, make([]byte, 4)); err != nil {
+		t.Fatal(err)
+	}
+
+	stop()
+	select {
+	case err := <-errs:
+		if err != nil {
+			t.Fatalf("RunTCPProxy returned %v, want nil", err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("RunTCPProxy did not stop with an active connection")
+	}
+	if _, err := client.Read(make([]byte, 1)); err == nil {
+		t.Fatal("active client connection remained open after shutdown")
+	}
+}

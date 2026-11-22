@@ -43,13 +43,16 @@ func TestRateLimitBucketsAreIsolatedPerIP(t *testing.T) {
 	}
 }
 
-func TestRateLimitRouteBucketIsSharedAcrossClients(t *testing.T) {
+func TestRateLimitRouteBucketsAreIsolatedPerClient(t *testing.T) {
 	handler := RateLimit(0, 0, 60, 1, 0, 0, "/r", pasthrough())
 	if status, _ := statusOf(handler, "192.0.2.1:1"); status != http.StatusOK {
 		t.Fatalf("first status = %d", status)
 	}
-	if status, _ := statusOf(handler, "192.0.2.2:1"); status != http.StatusTooManyRequests {
-		t.Fatalf("second status = %d", status)
+	if status, _ := statusOf(handler, "192.0.2.1:1"); status != http.StatusTooManyRequests {
+		t.Fatalf("second request from same client status = %d", status)
+	}
+	if status, _ := statusOf(handler, "192.0.2.2:1"); status != http.StatusOK {
+		t.Fatalf("request from another client status = %d", status)
 	}
 }
 
@@ -74,15 +77,15 @@ func TestRateLimitDisabledWhenRatesAreZero(t *testing.T) {
 
 func TestDeniedRequestDoesNotConsumeOtherBuckets(t *testing.T) {
 	t.Parallel()
-	handler := RateLimit(1, 1, 60, 1, 0, 0, "/r", pasthrough())
+	handler := RateLimit(1, 2, 60, 1, 0, 0, "/r", pasthrough())
 	if status, _ := statusOf(handler, "192.0.2.1:1"); status != http.StatusOK {
 		t.Fatalf("first status = %d", status)
 	}
-	if status, _ := statusOf(handler, "192.0.2.2:1"); status != http.StatusTooManyRequests {
+	if status, _ := statusOf(handler, "192.0.2.1:1"); status != http.StatusTooManyRequests {
 		t.Fatalf("second status = %d", status)
 	}
 	time.Sleep(1100 * time.Millisecond)
-	if status, _ := statusOf(handler, "192.0.2.2:1"); status != http.StatusOK {
+	if status, _ := statusOf(handler, "192.0.2.1:1"); status != http.StatusOK {
 		t.Fatalf("refilled status = %d", status)
 	}
 }

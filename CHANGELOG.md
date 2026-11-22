@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- key route rate limits by client IP
+- close active TCP tunnels on shutdown and validate TCP and UDP upstream targets before startup
+- strip client-supplied Forwarded headers before sending proxied requests
+
 ## [1.15.1] - 2026-11-20
 
 ### Fixed
