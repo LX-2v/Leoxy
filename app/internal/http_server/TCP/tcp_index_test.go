@@ -185,7 +185,11 @@ func TestTCPProxyStopsActiveConnectionsWhenDoneIsClosed(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.Close()
+	defer func() {
+		if err := client.Close(); err != nil {
+			t.Errorf("client.Close() failed: %v", err)
+		}
+	}()
 	if err := client.SetDeadline(time.Now().Add(3 * time.Second)); err != nil {
 		t.Fatal(err)
 	}
