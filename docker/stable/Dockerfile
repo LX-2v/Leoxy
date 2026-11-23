@@ -2,10 +2,9 @@
 # Enable modern Dockerfile features such as cache mounts.
 # Set the Go toolchain and runtime base image versions.
 ARG GO_VERSION=1.27.4
-ARG ALPINE_VERSION=3.22
 
 # Build on the requested target platform using a platform-native Go builder.
-FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine AS builder
+FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-bookworm AS builder
 
 # Accept the target platform and application version from BuildKit.
 ARG TARGETOS
@@ -33,8 +32,8 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     go build -trimpath -ldflags="-s -w -X main.version=v${LEOXY_VERSION}" -o /out/leoxy ./cli
 
 
-# Start a small Alpine runtime image.
-FROM alpine:${ALPINE_VERSION}
+# Start a small Debian runtime image without BusyBox.
+FROM debian:bookworm-slim
 
 # Add release and source metadata to the resulting image.
 ARG LEOXY_VERSION=1.15.1
@@ -52,10 +51,12 @@ LABEL org.opencontainers.image.title="leoxy" \
 # Listen on all container interfaces and use HTTP port 80 by default.
 ENV LEOXY_HOST=0.0.0.0 PORT=80
 
-# Install trusted certificates, create an unprivileged account, and prepare writable directories.
-RUN apk add --no-cache ca-certificates \
-    && addgroup -S -g 10001 leoxy \
-    && adduser -S -D -H -u 10001 -G leoxy leoxy \
+# Install trusted certificates and the health-check client, create an unprivileged account, and prepare writable directories.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates wget \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --system --gid 10001 leoxy \
+    && useradd --system --uid 10001 --gid leoxy --no-create-home leoxy \
     && mkdir -p /app/leoxy /app/log /app/docs/html \
     && chown -R leoxy:leoxy /app
 

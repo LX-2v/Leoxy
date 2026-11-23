@@ -1,5 +1,5 @@
 # Use a small Node.js runtime for the test server.
-FROM node:22-alpine
+FROM node:22-bookworm-slim
 
 # Set the application working directory.
 WORKDIR /app

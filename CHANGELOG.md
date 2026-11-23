@@ -7,6 +7,9 @@
 - close active TCP tunnels on shutdown and validate TCP and UDP upstream targets before startup
 - strip client-supplied Forwarded headers before sending proxied requests
 
+### Changed
+- move Linux Docker images from Alpine to Debian Bookworm and retain wget health checks
+
 ## [1.15.1] - 2026-11-20
 
 ### Fixed

@@ -1,8 +1,8 @@
-# Select the Alpine-based Go toolchain version.
-ARG GO_VERSION=1.27.4-alpine
+# Select the Debian-based Go toolchain version.
+ARG GO_VERSION=1.27.4
 
 # Compile Leoxy in a dedicated builder stage.
-FROM golang:${GO_VERSION} AS builder
+FROM golang:${GO_VERSION}-bookworm AS builder
 
 # Set the module workspace.
 WORKDIR /app/app
@@ -20,8 +20,8 @@ COPY . .
 WORKDIR /app/app
 RUN GOWORK=off CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/leoxy ./cli
 
-# Use the Alpine Go image as the runtime base.
-FROM golang:${GO_VERSION}
+# Use the Debian Go image as the runtime base.
+FROM golang:${GO_VERSION}-bookworm
 
 # Listen on all container interfaces.
 ENV LEOXY_HOST=0.0.0.0 PORT=80
@@ -29,8 +29,12 @@ ENV LEOXY_HOST=0.0.0.0 PORT=80
 # Set the runtime working directory.
 WORKDIR /app
 
-# Create the runtime account.
-RUN addgroup -S leoxy && adduser -S -G leoxy leoxy
+# Install the health-check client and create the runtime account.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends wget \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --system leoxy \
+    && useradd --system --gid leoxy --no-create-home leoxy
 
 # Copy the executable and bundled HTML documentation from the builder.
 COPY --from=builder /out/leoxy /usr/local/bin/leoxy
