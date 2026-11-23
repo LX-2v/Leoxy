@@ -23,7 +23,7 @@ server:
     require_mtls: false
     allowed_methods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
     trusted_proxy_cidrs: []
-    internal_cidrs: []
+    internal_cidrs: ["127.0.0.0/8", "::1/128"]
     redis_connect: 22
 
 # Enable resource monitoring for the test service.
@@ -46,7 +46,7 @@ upstream:
       - "http://node:9000"
     # Set per-client and per-route request limits.
     security:
-      rate_limit: 1000
-      rate_limit_burst: 500
-      route_rate_limit: 1000
-      route_rate_burst: 500
+      rate_limit: 5000
+      rate_limit_burst: 5000
+      route_rate_limit: 5000
+      route_rate_burst: 5000
