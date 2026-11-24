@@ -9,7 +9,7 @@ FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-bookworm AS builder
 # Accept the target platform and application version from BuildKit.
 ARG TARGETOS
 ARG TARGETARCH
-ARG LEOXY_VERSION=1.15.1
+ARG LEOXY_VERSION=1.15.2
 # Disable CGO and workspace mode for a portable static build.
 ENV CGO_ENABLED=0 GOWORK=off
 
@@ -36,7 +36,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 FROM debian:bookworm-slim
 
 # Add release and source metadata to the resulting image.
-ARG LEOXY_VERSION=1.15.1
+ARG LEOXY_VERSION=1.15.2
 ARG VCS_REF=unknown
 ARG BUILD_DATE=unknown
 

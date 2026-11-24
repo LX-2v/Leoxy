@@ -9,7 +9,7 @@
   <p>LX-2 routes HTTP, WebSocket, GraphQL, TCP, and UDP traffic to configurable upstream servers.</p>
 
   <p>
-    <a href="https://github.com/LX-2v/Leoxy/releases"><img src="https://img.shields.io/badge/release-v1.15.1-blue" alt="Release v1.15.1" /></a>
+    <a href="https://github.com/LX-2v/Leoxy/releases"><img src="https://img.shields.io/badge/release-v1.15.2-blue" alt="Release v1.15.2" /></a>
     <a href="./LICENSE"><img src="https://img.shields.io/badge/License-Apache--2.0-blue.svg" alt="License Apache 2.0" /></a>
     <a href="https://github.com/LX-2v/Leoxy/actions/workflows/ci.yml"><img src="https://github.com/LX-2v/Leoxy/actions/workflows/ci.yml/badge.svg" alt="CI status" /></a>
     <a href="https://go.dev/dl/"><img src="https://img.shields.io/badge/Go-1.27.4-00ADD8?logo=go" alt="Go version 1.27.4" /></a>
