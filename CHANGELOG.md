@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## [1.15.2] - 2026-11-24
 
 ### Fixed
 - key route rate limits by client IP
