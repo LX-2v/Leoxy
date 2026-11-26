@@ -69,6 +69,10 @@ go tool pprof -top ./block.pb.gz
 
 The pprof endpoints must be enabled with `LEOXY_PPROF=true` to retrieve these profiles.
 
+### Analyze profiles with LX-agent
+
+LX-agent can fetch profiles directly from Leoxy over HTTP. Start it with Leoxy's origin, for example `lx-agent -leoxy-pprof-url http://127.0.0.1:80`, and configure Leoxy with `LEOXY_PPROF=true`. Add LX-agent's source address or its private container subnet to `server.security.internal_cidrs`. In Docker Compose, use the Leoxy service name in the URL. LX-agent exposes `capture_leoxy_profile`; capture `heap` or `profile`, then analyze the returned profile ID with `top`.
+
 ## Reading results
 
 Latency is the time for a request and its response body to be read. `p50`, `p95`, and `p99` are percentiles of completed requests; `max` is the slowest. Accepted statuses default to 200–399, and failed transport/read attempts are reported as `error`. A nonzero benchmark exit status indicates at least one rejected request, or a profile download failure.
