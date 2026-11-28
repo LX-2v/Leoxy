@@ -59,13 +59,17 @@ func (h *targetHealth) markDown(key string) {
 }
 
 func pickTarget(targets []*url.URL, counter *uint64, health *targetHealth) *url.URL {
-	for range targets {
-		target := targets[int(atomic.AddUint64(counter, 1)-1)%len(targets)]
+	n := atomic.AddUint64(counter, 1) - 1
+	healthy := make([]*url.URL, 0, len(targets))
+	for _, target := range targets {
 		if !health.isDown(targetKey(target)) {
-			return target
+			healthy = append(healthy, target)
 		}
 	}
-	return targets[int(atomic.AddUint64(counter, 1)-1)%len(targets)]
+	if len(healthy) == 0 {
+		return targets[n%uint64(len(targets))]
+	}
+	return healthy[n%uint64(len(healthy))]
 }
 
 func LoadBalancedProxyHandler(prefix string, targets []*url.URL, forwardIP bool, trustedProxyCIDRs ...[]*net.IPNet) http.HandlerFunc {

@@ -299,3 +299,44 @@ func TestProxyPreservesRedirectLocation(t *testing.T) {
 		t.Fatalf("response = %d, Location = %q", response.Code, response.Header().Get("Location"))
 	}
 }
+func TestPickTargetIsEvenAcrossHealthyTargets(t *testing.T) {
+	targets := []*url.URL{
+		{Scheme: "http", Host: "one"},
+		{Scheme: "http", Host: "two"},
+		{Scheme: "http", Host: "three"},
+	}
+
+	for _, test := range []struct {
+		name string
+		down []int
+		want map[string]int
+	}{
+		{"all healthy", nil, map[string]int{"one": 33, "two": 33, "three": 33}},
+		{"one down", []int{2}, map[string]int{"one": 50, "two": 50}},
+		{"all down falls back to all", []int{0, 1, 2}, map[string]int{"one": 33, "two": 33, "three": 33}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			health := newTargetHealth()
+			for _, index := range test.down {
+				health.markDown(targetKey(targets[index]))
+			}
+			var next uint64
+			total := 100
+			if test.name != "one down" {
+				total = 99
+			}
+			picks := map[string]int{}
+			for i := 0; i < total; i++ {
+				picks[pickTarget(targets, &next, health).Host]++
+			}
+			for host, want := range test.want {
+				if picks[host] != want {
+					t.Fatalf("%s served %d, want %d (picks=%v)", host, picks[host], want, picks)
+				}
+			}
+			if len(picks) != len(test.want) {
+				t.Fatalf("picks = %v, want hosts %v", picks, test.want)
+			}
+		})
+	}
+}
